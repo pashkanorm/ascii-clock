@@ -34,17 +34,19 @@ function renderAsciiTime(time: string, scale: number): string {
 }
 
 function renderCircularClock(date: Date, scale: number = 2): string {
-  const radius = scale * 6; // base radius multiplied by scale
+  const radius = scale * 6;
   const diameter = radius * 2 + 1;
-  const grid: string[][] = Array.from({ length: diameter }, () => Array(diameter).fill(" "));
 
-  const cx = radius;
-  const cy = radius;
+  const gridWidth = diameter * 2 + 2; // extra 2 for safety
+  const grid: string[][] = Array.from({ length: diameter }, () => Array(gridWidth).fill(" "));
 
-  // Place numbers 1–12 around the circle
+  const cx = Math.floor(gridWidth / 2); // center X in wide grid
+  const cy = radius; // center Y
+
+  // Place numbers 1–12
   for (let n = 1; n <= 12; n++) {
     const angle = (Math.PI / 6) * (n - 3);
-    const nx = Math.round(cx + Math.cos(angle) * (radius - 1));
+    const nx = Math.round(cx + Math.cos(angle) * (radius - 1) * 2); // x stretched
     const ny = Math.round(cy + Math.sin(angle) * (radius - 1));
     const numStr = n.toString();
     for (let i = 0; i < numStr.length; i++) {
@@ -54,14 +56,11 @@ function renderCircularClock(date: Date, scale: number = 2): string {
     }
   }
 
-  // Function to draw hands
   function drawHand(angle: number, length: number, char: string) {
     for (let r = 1; r <= length; r++) {
-      const x = Math.round(cx + Math.cos(angle) * r);
+      const x = Math.round(cx + Math.cos(angle) * r * 2); // x stretched
       const y = Math.round(cy + Math.sin(angle) * r);
-      if (grid[y] && grid[y][x] !== undefined) {
-        grid[y][x] = char;
-      }
+      if (grid[y] && grid[y][x] !== undefined) grid[y][x] = char;
     }
   }
 
@@ -77,14 +76,16 @@ function renderCircularClock(date: Date, scale: number = 2): string {
   drawHand(minAngle, Math.floor(radius * 0.7), "M");
   drawHand(secAngle, Math.floor(radius * 0.9), "S");
 
-  // Draw circle outline
+  // Draw thicker circle border
   for (let deg = 0; deg < 360; deg++) {
     const rad = (deg * Math.PI) / 180;
-    const x = Math.round(cx + Math.cos(rad) * radius);
-    const y = Math.round(cy + Math.sin(rad) * radius);
-    if (grid[y] && grid[y][x] !== undefined && grid[y][x] === " ") {
-      grid[y][x] = "*";
-    }
+    const x1 = Math.round(cx + Math.cos(rad) * radius * 2);
+    const y1 = Math.round(cy + Math.sin(rad) * radius);
+    const x2 = Math.round(cx + Math.cos(rad) * (radius - 1) * 2);
+    const y2 = Math.round(cy + Math.sin(rad) * (radius - 1));
+
+    if (grid[y1] && grid[y1][x1] === " ") grid[y1][x1] = "*";
+    if (grid[y2] && grid[y2][x2] === " ") grid[y2][x2] = "*";
   }
 
   return grid.map((row) => row.join("")).join("\n");
